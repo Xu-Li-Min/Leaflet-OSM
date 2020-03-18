@@ -1,19 +1,26 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
   <meta charset="UTF-8">
   <meta content="ie=edge" http-equiv="X-UA-Compatible">
   <title>Leaflet + OSM (JavaScript & jQuery AJAX)</title>
-  <link crossorigin="" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" rel="stylesheet">
-  <script crossorigin="" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+  <link crossorigin="" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+    rel="stylesheet">
+  <script crossorigin=""
+    integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+    src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/MarkerCluster.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/MarkerCluster.Default.css" rel="stylesheet">
-  <link crossorigin="anonymous" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/MarkerCluster.Default.css"
+    rel="stylesheet">
+  <link crossorigin="anonymous" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" rel="stylesheet">
   <link href="STYLE/index.css" rel="stylesheet">
 </head>
+
 <body>
-  <div class="container-fluid"
-       id="main">
+  <div class="container-fluid" id="main">
     <div class="row">
       <div class="block-Left">
         <div class="header p-3">
@@ -42,12 +49,13 @@
       </div>
     </div>
   </div>
-  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/leaflet.markercluster.js"></script> 
-  <script crossorigin="anonymous" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script> 
-  <script crossorigin="anonymous" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script> 
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/leaflet.markercluster.js"></script>
+  <script crossorigin="anonymous" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+    src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+  <script crossorigin="anonymous" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+    src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
   <script>
-
     var map = L.map('map', {
       center: [22.6613099, 120.2936813],
       zoom: 16
@@ -241,11 +249,15 @@
 
         let adultMaskBg;
         let childMaskBg;
-        if (data[i].properties.mask_adult == 0 || data[i].properties.mask_child == 0) {
+        if (data[i].properties.mask_adult == 0) {
           adultMaskBg = 'noMaskBg';
-          childMaskBg = 'noMaskBg';
         } else {
           adultMaskBg = 'adultMaskBg';
+        }
+
+        if (data[i].properties.mask_child == 0) {
+          childMaskBg = 'noMaskBg';
+        } else {
           childMaskBg = 'childMaskBg';
         }
 
@@ -257,10 +269,9 @@
             `<p class="mt-0 mb-2 font-weight-bold name">${data[i].properties.name}<\/p>
             <p class="mt-0 mb-2">${data[i].properties.phone}<\/p>
             <div class="d-flex">
-              <div class="mask adultMaskBg mr-3"><div>成人口罩：<\/div><div>${data[i].properties.mask_adult}<\/div><\/div>
-              <div class="mask childMaskBg"><div>兒童口罩：<\/div><div>${data[i].properties.mask_child}<\/div><\/div>
+              <div class="mask ${adultMaskBg} mr-3"><div>成人口罩：<\/div><div>${data[i].properties.mask_adult}<\/div><\/div>
+              <div class="mask ${childMaskBg}"><div>兒童口罩：<\/div><div>${data[i].properties.mask_child}<\/div><\/div>
             <\/div> `)
-
         );
 
         map.addLayer(markers);
@@ -343,8 +354,10 @@
             maskInfo.appendChild(pharmacyBox);
 
             pharmacyBox.addEventListener('click', function (e) {
-              map.panTo([this.dataset.latitude, this.dataset.longitude]);
-
+              let latlng = L.latLng(this.dataset.latitude, this.dataset.longitude);
+              console.log(latlng);
+              map.panTo(latlng);
+              // layer.openPopup();
             });
 
           }
@@ -412,4 +425,5 @@
     });
   </script>
 </body>
+
 </html>
