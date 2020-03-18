@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta content="ie=edge" http-equiv="X-UA-Compatible">
+  <title>Leaflet + OSM (JavaScript & jQuery AJAX)</title>
+  <link crossorigin="" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" rel="stylesheet">
+  <script crossorigin="" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/MarkerCluster.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/MarkerCluster.Default.css" rel="stylesheet">
+  <link crossorigin="anonymous" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" rel="stylesheet">
+  <link href="STYLE/index.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container-fluid"
+       id="main">
+    <div class="row">
+      <div class="block-Left">
+        <div class="header p-3">
+          <div class="getInfo">
+            <div class="weekText"></div>
+            <div class="d-flex flex-column justify-content-around align-items-end">
+              <p class="m-0 dateText"></p>
+              <p class="m-0 evenNumber">身分證末碼為<span>1,3,5,7,9</span>可購買</p>
+              <p class="m-0 oddNumber">身分證末碼為<span>2,4,6,8,0</span>可購買</p>
+              <p class="m-0 allNumber">無身份證字號限制</p>
+            </div>
+          </div>
+          <div class="selectBox mt-3">
+            <div class="form-group d-flex">
+              <label class="col-form-label" for="county">縣市</label>
+              <select class="form-control" id="county">
+                <option value="">請選擇縣市</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="maskInfo"></div>
+      </div>
+      <div class="col-9 p-0">
+        <div id="map"></div>
+      </div>
+    </div>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/leaflet.markercluster.js"></script> 
+  <script crossorigin="anonymous" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script> 
+  <script crossorigin="anonymous" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script> 
+  <script>
+
+    var map = L.map('map', {
+      center: [22.6613099, 120.2936813],
+      zoom: 16
+    });
+
+    // 圖資
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap<\/a> contributors',
+      maxZoom: 18
+    }).addTo(map);
+
+    // 定位
+    map.locate({
+      setView: true,
+      maxZoom: 8
+    });
+
+    function onLocationFound(e) {
+      var radius = e.accuracy;
+
+      L.marker(e.latlng).addTo(map)
+        .bindPopup("到最近的藥局還有" + radius + " 公尺").openPopup();
+
+      L.circle(e.latlng, radius).addTo(map);
+
+    }
+
+    map.on('locationfound', onLocationFound);
+
+    function onLocationError(e) {
+      alert(e.message);
+    }
+
+    map.on('locationerror', onLocationError);
+
+    // ICON
+    let iconGreen = new L.Icon({
+      iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+
+    let iconRed = new L.Icon({
+      iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+
+    let weekText = document.querySelector('.weekText');
+    let dateText = document.querySelector('.dateText');
+    let date = new Date();
+    let week = date.getDay();
+    let year = date.getFullYear();
+    let month = date.getMonth() + 1;
+    let day = date.getDate();
+    let evenNumber = document.querySelector('.evenNumber');
+    let oddNumber = document.querySelector('.oddNumber');
+    let allNumber = document.querySelector('.allNumber');
+
+    // 日期
+    if (month + 1 < 10) {
+      dateText.textContent = `${year} - 0${month} - ${day}`;
+    } else {
+      dateText.textContent = `${year} - ${month} - ${day}`;
+    }
+
+    // 身份證字號限制
+    if (week == 0) {
+      allNumber.style.display = 'block';
+    } else if (week % 2 == 1) {
+      evenNumber.style.display = 'block';
+    } else {
+      oddNumber.style.display = 'block';
+    }
+
+
+    // 星期
+    switch (week) {
+      case 0:
+        weekText.textContent = '星期日';
+        break;
+      case 1:
+        weekText.textContent = '星期一';
+        break;
+      case 2:
+        weekText.textContent = '星期二';
+        break;
+      case 3:
+        weekText.textContent = '星期三';
+        break;
+      case 4:
+        weekText.textContent = '星期四';
+        break;
+      case 5:
+        weekText.textContent = '星期五';
+        break;
+      case 6:
+        weekText.textContent = '星期六';
+        break;
+    }
+
+    // JS AJAX 獲取資料
+    // let xhr = new XMLHttpRequest();
+    // xhr.overrideMimeType('text/xml');
+    // xhr.open('GET',
+    //  'https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json'
+    // );
+    // xhr.send();
+    // xhr.onload = function () {
+    //  let data = JSON.parse(xhr.responseText).features;
+    //  let dataLen = data.length;
+    //
+    //  let markers = L.markerClusterGroup().addTo(map);
+    //
+    //  for (let i = 0; i < dataLen; i++) {
+    //          let mark;
+    //          if (data[i].properties.mask_adult == 0 && data[i].properties.mask_child == 0) {
+    //                  mark = iconRed;
+    //          } else {
+    //                  mark = iconGreen;
+    //          }
+    //
+    //          markers.addLayer(
+    //                  L.marker([data[i].geometry.coordinates[1], data[i].geometry.coordinates[0]], {
+    //                          icon: mark
+    //                  }).bindPopup(data[i].properties.name + '<br />' + '成人口罩：' + data[i].properties.mask_adult +
+    //                          '<br />' + '兒童口罩：' + data[i].properties.mask_child)
+    //          );
+    //
+    //          map.addLayer(markers);
+    //  }
+    // };
+
+
+    // JQ AJAX
+    // $.ajax({
+    //  url: 'https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json',
+    //  type: 'GET',
+    //  dataType: 'json',
+    //  success: function (resopnse) {
+    //          let data = resopnse.features;
+    //          let dataLen = data.length;
+    //
+    //          let markers = L.markerClusterGroup().addTo(map);
+    //
+    //          for (let i = 0; i < dataLen; i++) {
+    //                  let mark;
+    //                  if (data[i].properties.mask_adult == 0 && data[i].properties.mask_child == 0) {
+    //                          mark = iconRed;
+    //                  } else {
+    //                          mark = iconGreen;
+    //                  }
+    //
+    //                  markers.addLayer(
+    //                          L.marker([data[i].geometry.coordinates[1], data[i].geometry.coordinates[0]], {icon: mark})
+    //                                  .bindPopup(data[i].properties.name + '<br />' + '成人口罩：' + data[i].properties.mask_adult + '<br />'
+    //                                          + '兒童口罩：' + data[i].properties.mask_child)
+    //                  );
+    //
+    //                  map.addLayer(markers);
+    //
+    //          }
+    //  },
+    //  error: function () {
+    //          alert('資料錯誤');
+    //  }
+    // });
+
+    // jQuery 直接請求從服務器加載JSON編碼
+
+    $.getJSON('https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json', function (response) {
+      let data = response.features;
+      let dataLen = data.length;
+
+      let markers = L.markerClusterGroup().addTo(map);
+
+      for (let i = 0; i < dataLen; i++) {
+        // 新增mark
+        let mark;
+        if (data[i].properties.mask_adult == 0 && data[i].properties.mask_child == 0) {
+          mark = iconRed;
+        } else {
+          mark = iconGreen;
+        }
+
+        let adultMaskBg;
+        let childMaskBg;
+        if (data[i].properties.mask_adult == 0 || data[i].properties.mask_child == 0) {
+          adultMaskBg = 'noMaskBg';
+          childMaskBg = 'noMaskBg';
+        } else {
+          adultMaskBg = 'adultMaskBg';
+          childMaskBg = 'childMaskBg';
+        }
+
+        markers.addLayer(
+          L.marker([data[i].geometry.coordinates[1], data[i].geometry.coordinates[0]], {
+            icon: mark
+          })
+          .bindPopup(
+            `<p class="mt-0 mb-2 font-weight-bold name">${data[i].properties.name}<\/p>
+            <p class="mt-0 mb-2">${data[i].properties.phone}<\/p>
+            <div class="d-flex">
+              <div class="mask adultMaskBg mr-3"><div>成人口罩：<\/div><div>${data[i].properties.mask_adult}<\/div><\/div>
+              <div class="mask childMaskBg"><div>兒童口罩：<\/div><div>${data[i].properties.mask_child}<\/div><\/div>
+            <\/div> `)
+
+        );
+
+        map.addLayer(markers);
+
+      }
+
+      // 城市過濾
+      let set = new Set();
+
+      const countyAry = data.filter(item => {
+        if ((item.properties.county) !== "") {
+          return !set.has(item.properties.county) ? set.add(item.properties.county) : false;
+        }
+      });
+
+      for (let i = 0; i < countyAry.length; i++) {
+        let selectEl = document.getElementById('county');
+        let optionCounty = document.createElement('OPTION');
+        optionCounty.textContent = countyAry[i].properties.county;
+        selectEl.appendChild(optionCounty);
+      }
+
+      let selectEl = document.getElementById('county');
+      let maskInfo = document.querySelector('#maskInfo');
+
+      console.log(data);
+
+      selectEl.addEventListener('change', function (e) {
+        maskInfo.innerHTML = '';
+        for (let i = 0; i < dataLen; i++) {
+          if (e.target.value == data[i].properties.county) {
+            let pharmacyBox = document.createElement('div');
+            pharmacyBox.setAttribute('class', 'pharmacyBox');
+            pharmacyBox.setAttribute('data-longitude', data[i].geometry.coordinates[0]);
+            pharmacyBox.setAttribute('data-latitude', data[i].geometry.coordinates[1]);
+
+            let nameEl = document.createElement('p');
+            nameEl.textContent = `藥局名稱：${data[i].properties.name}`;
+            pharmacyBox.appendChild(nameEl);
+            let addressEl = document.createElement('p');
+            addressEl.textContent = `藥局地址：${data[i].properties.address}`;
+            pharmacyBox.appendChild(addressEl);
+            let phoneEl = document.createElement('p');
+            phoneEl.textContent = `藥局電話：${data[i].properties.phone}`;
+            pharmacyBox.appendChild(phoneEl);
+            let noteEl = document.createElement('p');
+            noteEl.textContent = `口罩發放資訊：${data[i].properties.note}`;
+            pharmacyBox.appendChild(noteEl);
+
+            let flex = document.createElement('div');
+            flex.setAttribute('class', 'd-flex');
+            let adultMask = document.createElement('div');
+            if (data[i].properties.mask_adult == 0) {
+              adultMask.setAttribute('class', 'adultMask mr-2 noMaskBg');
+            } else {
+              adultMask.setAttribute('class', 'adultMask mr-2 adultMaskBg');
+            }
+            flex.appendChild(adultMask);
+            let adultText = document.createElement('p');
+            adultText.textContent = '成人口罩';
+            adultMask.appendChild(adultText);
+            let adultNumber = document.createElement('p');
+            adultNumber.textContent = data[i].properties.mask_adult;
+            adultMask.appendChild(adultNumber);
+            pharmacyBox.appendChild(flex);
+
+            let childMask = document.createElement('div');
+            if (data[i].properties.mask_child == 0) {
+              childMask.setAttribute('class', 'childMask mr-2 noMaskBg');
+            } else {
+              childMask.setAttribute('class', 'childMask mr-2 childMaskBg');
+            }
+            flex.appendChild(childMask);
+            let childText = document.createElement('p');
+            childText.textContent = '兒童口罩';
+            childMask.appendChild(childText);
+            let childNumber = document.createElement('p');
+            childNumber.textContent = data[i].properties.mask_child;
+            childMask.appendChild(childNumber);
+            maskInfo.appendChild(pharmacyBox);
+
+            pharmacyBox.addEventListener('click', function (e) {
+              map.panTo([this.dataset.latitude, this.dataset.longitude]);
+
+            });
+
+          }
+        }
+
+        // let penToEl = document.querySelectorAll('.pharmacyBox');
+
+        // console.log(penToEl);
+
+        // penToEl.addEventListener('click', function(e){
+        //   console.log(e);
+        // });
+
+      });
+
+
+      // // 城市過濾
+      // let county = countyFn();
+      // let countyLen = county.length;
+
+      // function countyFn(e) {
+      //        let resultCounty;
+      //        let countyData = [];
+      //        for (let i = 0; i < dataLen; i++) {
+      //                if (data[i].properties.county !== "") {
+      //                        countyData.push(data[i].properties.county);
+      //                }
+      //        }
+      //        countAry = Array.from(new Set(countyData));
+      //        return countAry.sort();
+      // }
+
+      // 新增城市Option
+      // for (let i = 0; i < countyLen; i++) {
+      //        let selectEl = document.getElementById('county');
+      //        let optionCounty = document.createElement('OPTION');
+      //        optionCounty.textContent = county[i];
+      //        selectEl.appendChild(optionCounty);
+      // }
+
+      // // 區域過濾
+      // let area = areaFn();
+      // let areaLen = area.length;
+
+      // function areaFn(e) {
+      //        let resultarea;
+      //        let areaData = [];
+      //        for (let i = 0; i < dataLen; i++) {
+      //                if (data[i].properties.area !== "") {
+      //                        areaData.push(data[i].properties.area);
+      //                }
+      //                resultarea = Array.from(new Set(areaData));
+      //        }
+      //        return resultarea.sort();
+      // }
+
+      // // 新增城市Option
+      // for (let i = 0; i < areaLen; i++) {
+      //        let selectEl = document.getElementById('area');
+      //        let optionArea = document.createElement('OPTION');
+      //        optionArea.textContent = area[i];
+      //        selectEl.appendChild(optionArea);
+      // }
+
+    });
+  </script>
+</body>
+</html>
